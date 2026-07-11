@@ -88,31 +88,35 @@ pastas param de "voltar".
 |--------------------------|------------------------------------------------------------------|--------|
 | `--aplicar`              | Efetiva de verdade. Sem isto, só simula.                         | (off)  |
 | `--saida PASTA`          | Manda o resultado para outra pasta em vez da própria entrada.    | entrada|
-| `--rigoroso`             | Modo mais rígido de uma vez (ver tabela abaixo).                 | (off)  |
-| `--limite-nitidez N`     | Abaixo disso a foto é considerada borrada. Maior = mais rígido.  | 150    |
-| `--min-megapixels N`     | Fotos menores que isso viram "baixa qualidade".                  | 2.0    |
-| `--limite-duplicata N`   | Quão parecidas duas fotos precisam ser p/ virar duplicata (0-10).| 8      |
+| `--suave`                | Afrouxa os limiares (ver tabela abaixo).                         | (off)  |
+| `--limite-nitidez N`     | Abaixo disso a foto é considerada borrada. Maior = mais rígido.  | 300    |
+| `--min-megapixels N`     | Fotos menores que isso viram "baixa qualidade".                  | 4.0    |
+| `--limite-duplicata N`   | Quão parecidas duas fotos precisam ser p/ virar duplicata (0-10).| 10     |
 | `--plano`                | Junta tudo numa pasta única em vez de subpastas por data.        | (off)  |
 | `--nao-limpar-vazias`    | Não remove as pastas que ficaram vazias.                         | (off)  |
 
 ### Níveis de rigor
 
-O padrão já é **rígido**. Para ser ainda mais exigente, use `--rigoroso`:
+O padrão já é o modo **rigoroso** (o mais exigente). Se estiver separando fotos
+boas demais, use `--suave` para afrouxar:
 
-| Nível                | Nitidez mín. | Resolução mín. | Duplicatas |
-|----------------------|:------------:|:--------------:|:----------:|
-| Padrão (normal)      | 150          | 2.0 MP         | 8          |
-| `--rigoroso`         | 300          | 4.0 MP         | 10         |
+| Nível                     | Nitidez mín. | Resolução mín. | Duplicatas |
+|---------------------------|:------------:|:--------------:|:----------:|
+| **Padrão (rigoroso)**     | 300          | 4.0 MP         | 10         |
+| `--suave`                 | 150          | 2.0 MP         | 8          |
 
 Qualquer valor que você informe explicitamente tem prioridade sobre o preset.
 Exemplos:
 
 ```bash
-# Bem exigente, de uma vez:
-python organizar_fotos.py "/fotos" --rigoroso --aplicar
+# Padrão já é rigoroso:
+python organizar_fotos.py "/fotos" --aplicar
+
+# Mais tolerante:
+python organizar_fotos.py "/fotos" --suave --aplicar
 
 # Rigoroso, mas afrouxando só a resolução mínima:
-python organizar_fotos.py "/fotos" --rigoroso --min-megapixels 2 --aplicar
+python organizar_fotos.py "/fotos" --min-megapixels 2 --aplicar
 ```
 
 > **Dica:** rode primeiro em simulação (sem `--aplicar`) e olhe o resumo. Se

@@ -375,7 +375,7 @@ def organizar(args):
     print(f"  Saída   : {saida}")
     modo = "APLICAR (arquivos serão movidos)" if args.aplicar else "SIMULAÇÃO (nada será movido)"
     print(f"  Modo    : {modo}")
-    rigor = "RIGOROSO" if args.rigoroso else "normal"
+    rigor = "suave" if args.suave else "RIGOROSO (padrão)"
     print(f"  Rigor   : {rigor}  (nitidez>={args.limite_nitidez:.0f}, "
           f">={args.min_megapixels:.1f} MP, duplicata<={args.limite_duplicata})")
     print("-" * 64)
@@ -529,16 +529,19 @@ def construir_parser():
     # explicitamente (o que tem prioridade sobre o preset --rigoroso).
     p.add_argument("--limite-nitidez", type=float, default=None,
                    help="Abaixo deste valor a foto é considerada borrada "
-                        "(padrão: 150; com --rigoroso: 300).")
+                        "(padrão rigoroso: 300; com --suave: 150).")
     p.add_argument("--min-megapixels", type=float, default=None,
                    help="Fotos menores que isto são baixa qualidade "
-                        "(padrão: 2.0 MP; com --rigoroso: 4.0 MP).")
+                        "(padrão rigoroso: 4.0 MP; com --suave: 2.0 MP).")
     p.add_argument("--limite-duplicata", type=int, default=None,
                    help="Distância máx. de hash para considerar duplicata "
-                        "(padrão: 8; com --rigoroso: 10).")
+                        "(padrão rigoroso: 10; com --suave: 8).")
+    p.add_argument("--suave", action="store_true",
+                   help="Afrouxa os limiares (150 / 2.0 MP / 8). Sem isto, "
+                        "roda no modo rigoroso, que é o padrão.")
     p.add_argument("--rigoroso", action="store_true",
-                   help="Modo mais rígido: separa mais fotos borradas, exige "
-                        "resolução maior e agrupa mais duplicadas.")
+                   help="Modo rigoroso (já é o padrão). Mantido por "
+                        "compatibilidade; sem efeito extra.")
     p.add_argument("--plano", action="store_true",
                    help="Junta tudo numa pasta única em vez de subpastas por data.")
     p.add_argument("--nao-limpar-vazias", dest="limpar_vazias",
@@ -550,13 +553,14 @@ def construir_parser():
 
 
 # Presets de rigor: (limite_nitidez, min_megapixels, limite_duplicata)
-PRESET_NORMAL = (150.0, 2.0, 8)
+# O modo rigoroso é o PADRÃO; --suave afrouxa.
+PRESET_SUAVE = (150.0, 2.0, 8)
 PRESET_RIGOROSO = (300.0, 4.0, 10)
 
 
 def aplicar_presets(args):
-    """Resolve os limiares: flag explícita > preset --rigoroso > padrão normal."""
-    base = PRESET_RIGOROSO if args.rigoroso else PRESET_NORMAL
+    """Resolve os limiares: flag explícita > preset. Rigoroso é o padrão."""
+    base = PRESET_SUAVE if args.suave else PRESET_RIGOROSO
     if args.limite_nitidez is None:
         args.limite_nitidez = base[0]
     if args.min_megapixels is None:
