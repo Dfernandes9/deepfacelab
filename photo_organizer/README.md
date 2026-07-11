@@ -1,19 +1,22 @@
 # Organizador de Fotos
 
 Ferramenta simples e **segura** para colocar ordem numa biblioteca de fotos
-bagunçada. Ela resolve quatro problemas de uma vez:
+bagunçada. Ela resolve tudo de uma vez:
 
-1. **Junta tudo por data** (`Ano/Ano-Mês`), acabando com as inúmeras pastas
-   espalhadas que sempre voltam.
+1. **Junta fotos E vídeos por data** (`Ano/Ano-Mês`), acabando com as inúmeras
+   pastas espalhadas que sempre voltam. Como todos os arquivos saem das pastas
+   antigas, elas ficam vazias e são removidas — o número de pastas cai
+   drasticamente.
 2. **Remove fotos duplicadas** — de cada grupo de cópias, mantém a de melhor
    qualidade.
 3. **Separa fotos de má qualidade** — tremidas, borradas ou pequenas demais.
 4. **Separa fotos tiradas de vídeo** — quadros de gravação, prints de tela e
    capturas.
 
-> **Nada é apagado.** As fotos ruins e duplicadas vão para uma pasta de
-> quarentena (`_rejeitadas/`), separadas por motivo. Você revisa com calma e
-> apaga só o que quiser.
+> **Nada é apagado, nenhuma foto ou vídeo se perde.** Os vídeos são só movidos
+> para a pasta da data certa (nunca analisados nem descartados). As fotos ruins
+> e duplicadas vão para uma pasta de quarentena (`_rejeitadas/`), separadas por
+> motivo — você revisa com calma e apaga só o que quiser.
 
 ---
 
@@ -51,24 +54,26 @@ python organizar_fotos.py "/entrada" --saida "/fotos_organizadas" --aplicar
 
 ## Resultado
 
-Antes (bagunça típica):
+Antes (bagunça típica — dezenas de pastas):
 
 ```
 Fotos/
-├── WhatsApp/…
+├── WhatsApp Images/…
+├── WhatsApp Video/movie.mov
 ├── Nova pasta/
 ├── Nova pasta (2)/
 ├── Câmera/2023-01/…
+├── DCIM/100ANDRO/VID_2023.mp4
 ├── videos/frame_0001.jpg
 └── prints/Screenshot.png
 ```
 
-Depois:
+Depois (poucas pastas, fotos e vídeos juntos por data):
 
 ```
 Fotos/
 ├── 2023/
-│   ├── 2023-01/
+│   ├── 2023-01/            ← fotos e vídeos do mês, juntos
 │   └── 2023-05/
 ├── 2024/
 │   └── 2024-12/
@@ -77,6 +82,9 @@ Fotos/
     ├── de_video/
     └── duplicadas/
 ```
+
+Quer o mínimo absoluto de pastas? Use `--por-ano` — aí fica só uma pasta por
+ano (`2023/`, `2024/`, …).
 
 **Pode rodar quantas vezes quiser**: fotos já organizadas ficam onde estão e a
 quarentena não é reprocessada. Rodar de novo não bagunça nada — por isso as
@@ -92,8 +100,15 @@ pastas param de "voltar".
 | `--limite-nitidez N`     | Abaixo disso a foto é considerada borrada. Maior = mais rígido.  | 300    |
 | `--min-megapixels N`     | Fotos menores que isso viram "baixa qualidade".                  | 4.0    |
 | `--limite-duplicata N`   | Quão parecidas duas fotos precisam ser p/ virar duplicata (0-10).| 10     |
+| `--por-ano`              | Agrupa só por ANO (`2023/`) — o mínimo de pastas.                | (off)  |
 | `--plano`                | Junta tudo numa pasta única em vez de subpastas por data.        | (off)  |
 | `--nao-limpar-vazias`    | Não remove as pastas que ficaram vazias.                         | (off)  |
+
+> **Sobre os vídeos:** são movidos junto das fotos, para a pasta da data de
+> gravação (lida da data do arquivo). Nunca são analisados nem apagados. Como
+> alguns programas de cópia/download alteram a data do arquivo, um vídeo pode
+> eventualmente cair no mês errado — mas ele nunca se perde e continua
+> organizado.
 
 ### Níveis de rigor
 

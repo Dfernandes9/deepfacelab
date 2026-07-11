@@ -6,11 +6,14 @@ Organizador de Fotos — "excelência"
 
 Ferramenta autônoma para colocar ordem numa biblioteca de fotos bagunçada:
 
-  1. JUNTA tudo numa árvore limpa por data (Ano/Ano-Mês), acabando com as
-     inúmeras pastas espalhadas que sempre voltam.
+  1. JUNTA fotos E vídeos numa árvore limpa por data (Ano/Ano-Mês), acabando
+     com as inúmeras pastas espalhadas que sempre voltam. Como tudo sai das
+     pastas antigas, elas esvaziam e são removidas.
   2. REMOVE fotos duplicadas (mantém a de melhor qualidade de cada grupo).
   3. SEPARA fotos de má qualidade (tremidas / borradas / minúsculas).
   4. SEPARA fotos que são quadros tirados de vídeo (frames, prints, gravações).
+
+Vídeos são apenas movidos por data (nunca analisados nem descartados).
 
 SEGURANÇA
 ---------
@@ -65,6 +68,15 @@ except ImportError as e:  # pragma: no cover - mensagem amigável
 EXTENSOES_IMAGEM = {
     ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff",
     ".webp", ".heic", ".heif",
+}
+
+# Vídeos são organizados por data também (sem análise de qualidade),
+# para que nenhuma pasta fique "presa" por causa de um vídeo e o número
+# total de pastas caia de verdade. Nenhum vídeo é apagado.
+EXTENSOES_VIDEO = {
+    ".mp4", ".mov", ".avi", ".mkv", ".m4v", ".3gp", ".3g2", ".webm",
+    ".wmv", ".flv", ".mts", ".m2ts", ".mpg", ".mpeg", ".mpe", ".mp2",
+    ".ogv", ".vob", ".mxf",
 }
 
 # Pastas geradas por esta ferramenta — nunca são reprocessadas.
@@ -286,8 +298,11 @@ def eh_baixa_qualidade(foto, limite_nitidez, min_megapixels):
 # Coleta de arquivos
 # --------------------------------------------------------------------------- #
 
-def coletar_imagens(raiz, pasta_saida):
-    """Percorre a árvore ignorando as pastas geradas pela ferramenta."""
+def coletar_arquivos(raiz, pasta_saida):
+    """
+    Percorre a árvore ignorando as pastas geradas pela ferramenta.
+    Retorna (caminho, eh_video) para cada foto ou vídeo encontrado.
+    """
     saida_abs = os.path.abspath(pasta_saida)
     for dir_atual, subdirs, arquivos in os.walk(raiz):
         # Não reprocessa a quarentena nem a própria saída.
@@ -295,8 +310,11 @@ def coletar_imagens(raiz, pasta_saida):
         if os.path.abspath(dir_atual).startswith(os.path.join(saida_abs, PASTA_REJEITADAS)):
             continue
         for nome in arquivos:
-            if os.path.splitext(nome)[1].lower() in EXTENSOES_IMAGEM:
-                yield os.path.join(dir_atual, nome)
+            ext = os.path.splitext(nome)[1].lower()
+            if ext in EXTENSOES_IMAGEM:
+                yield os.path.join(dir_atual, nome), False
+            elif ext in EXTENSOES_VIDEO:
+                yield os.path.join(dir_atual, nome), True
 
 
 # --------------------------------------------------------------------------- #
@@ -380,16 +398,31 @@ def organizar(args):
           f">={args.min_megapixels:.1f} MP, duplicata<={args.limite_duplicata})")
     print("-" * 64)
 
-    caminhos = list(coletar_imagens(raiz, saida))
-    print(f"  Encontradas {len(caminhos)} imagens. Analisando...")
+    coletados = list(coletar_arquivos(raiz, saida))
+    caminhos_foto = [c for c, ev in coletados if not ev]
+    caminhos_video = [c for c, ev in coletados if ev]
+    print(f"  Encontradas {len(caminhos_foto)} fotos e "
+          f"{len(caminhos_video)} vídeos. Analisando...")
 
     fotos = []
-    for i, caminho in enumerate(caminhos, 1):
+    for i, caminho in enumerate(caminhos_foto, 1):
         fotos.append(analisar(caminho))
         if i % 200 == 0:
-            print(f"    ... {i}/{len(caminhos)}")
+            print(f"    ... {i}/{len(caminhos_foto)}")
 
     contadores = defaultdict(int)
+
+    # --- Vídeos: organizados por data (pela data do arquivo), nunca --------- #
+    # analisados nem descartados. Isso esvazia as pastas antigas para que
+    # elas sumam e o número total de pastas caia drasticamente.
+    for caminho in caminhos_video:
+        try:
+            data = datetime.fromtimestamp(os.path.getmtime(caminho))
+        except OSError:
+            data = datetime.now()
+        pasta_data = pasta_por_data(saida, data, args.plano, args.por_ano)
+        executor.mover(caminho, pasta_data, "video")
+        contadores["video"] += 1
 
     # --- Passo 1: classifica erro / vídeo / baixa qualidade. -------------- #
     # Fazemos isto ANTES da deduplicação para que um quadro de vídeo ou uma
@@ -439,7 +472,7 @@ def organizar(args):
             contadores["duplicada"] += 1
             continue
 
-        pasta_data = pasta_por_data(saida, foto.data, args.plano)
+        pasta_data = pasta_por_data(saida, foto.data, args.plano, args.por_ano)
         executor.mover(foto.caminho, pasta_data, "organizada")
         contadores["organizada"] += 1
 
@@ -470,9 +503,12 @@ def agrupar_duplicatas(fotos, limite):
     return grupos
 
 
-def pasta_por_data(saida, data, plano):
+def pasta_por_data(saida, data, plano, por_ano=False):
     if plano:
         return os.path.join(saida, "Fotos")
+    if por_ano:
+        # Uma única pasta por ano — o mínimo de pastas possível mantendo ordem.
+        return os.path.join(saida, f"{data.year:04d}")
     return os.path.join(saida, f"{data.year:04d}", f"{data.year:04d}-{data.month:02d}")
 
 
@@ -481,7 +517,8 @@ def _relatorio(executor, contadores, pastas_vazias, args):
     print("  RESUMO")
     print("-" * 64)
     rotulos = [
-        ("organizada", "Organizadas por data"),
+        ("organizada", "Fotos organizadas por data"),
+        ("video", "Vídeos organizados por data"),
         ("duplicada", "Duplicadas (quarentena)"),
         ("de_video", "Quadros de vídeo/print (quarentena)"),
         ("baixa_qualidade", "Baixa qualidade (quarentena)"),
@@ -542,6 +579,9 @@ def construir_parser():
     p.add_argument("--rigoroso", action="store_true",
                    help="Modo rigoroso (já é o padrão). Mantido por "
                         "compatibilidade; sem efeito extra.")
+    p.add_argument("--por-ano", dest="por_ano", action="store_true",
+                   help="Agrupa só por ANO (Ano/) em vez de Ano/Ano-Mês. "
+                        "Reduz ainda mais o número de pastas.")
     p.add_argument("--plano", action="store_true",
                    help="Junta tudo numa pasta única em vez de subpastas por data.")
     p.add_argument("--nao-limpar-vazias", dest="limpar_vazias",
