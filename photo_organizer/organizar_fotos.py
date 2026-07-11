@@ -6,9 +6,9 @@ Organizador de Fotos — "excelência"
 
 Ferramenta autônoma para colocar ordem numa biblioteca de fotos bagunçada:
 
-  1. JUNTA fotos E vídeos numa árvore limpa por data (Ano/Ano-Mês), acabando
-     com as inúmeras pastas espalhadas que sempre voltam. Como tudo sai das
-     pastas antigas, elas esvaziam e são removidas.
+  1. JUNTA fotos E vídeos numa só árvore por data (Biblioteca/Ano/Ano-Mês),
+     acabando com as inúmeras pastas espalhadas que sempre voltam. Como tudo
+     sai das pastas antigas, elas esvaziam e são removidas.
   2. REMOVE fotos duplicadas (mantém a de melhor qualidade de cada grupo).
   3. SEPARA fotos de má qualidade (tremidas / borradas / minúsculas).
   4. SEPARA fotos que são quadros tirados de vídeo (frames, prints, gravações).
@@ -298,17 +298,29 @@ def eh_baixa_qualidade(foto, limite_nitidez, min_megapixels):
 # Coleta de arquivos
 # --------------------------------------------------------------------------- #
 
-def coletar_arquivos(raiz, pasta_saida):
+def coletar_arquivos(raiz, pasta_saida, pasta_biblioteca=None):
     """
-    Percorre a árvore ignorando as pastas geradas pela ferramenta.
+    Percorre a árvore ignorando as pastas geradas pela ferramenta (a
+    quarentena e a própria biblioteca já organizada, para não reprocessar).
     Retorna (caminho, eh_video) para cada foto ou vídeo encontrado.
     """
     saida_abs = os.path.abspath(pasta_saida)
+    rejeitadas_abs = os.path.join(saida_abs, PASTA_REJEITADAS)
+    biblioteca_abs = os.path.abspath(pasta_biblioteca) if pasta_biblioteca else None
+
+    def ignorar(caminho_abs):
+        if caminho_abs == rejeitadas_abs:
+            return True
+        # A biblioteca só é ignorada se for uma subpasta distinta da raiz
+        # (evita ignorar tudo quando não há pasta-raiz própria).
+        if biblioteca_abs and biblioteca_abs != saida_abs and caminho_abs == biblioteca_abs:
+            return True
+        return False
+
     for dir_atual, subdirs, arquivos in os.walk(raiz):
-        # Não reprocessa a quarentena nem a própria saída.
-        subdirs[:] = [d for d in subdirs if d != PASTA_REJEITADAS]
-        if os.path.abspath(dir_atual).startswith(os.path.join(saida_abs, PASTA_REJEITADAS)):
-            continue
+        # Poda as pastas geradas para não descer nelas.
+        subdirs[:] = [d for d in subdirs
+                      if not ignorar(os.path.abspath(os.path.join(dir_atual, d)))]
         for nome in arquivos:
             ext = os.path.splitext(nome)[1].lower()
             if ext in EXTENSOES_IMAGEM:
@@ -384,21 +396,26 @@ def organizar(args):
         return 1
 
     pasta_rejeitadas = os.path.join(saida, PASTA_REJEITADAS)
+    # Pasta-raiz única que abriga toda a árvore por data (fotos + vídeos).
+    # Vazia ("" / "." / "/") = coloca as pastas de data direto no destino.
+    nome_raiz = (args.pasta_raiz or "").strip().strip("/\\").strip(".")
+    biblioteca = os.path.join(saida, nome_raiz) if nome_raiz else saida
     executor = Executor(args.aplicar)
 
     print("=" * 64)
     print("  ORGANIZADOR DE FOTOS")
     print("=" * 64)
-    print(f"  Entrada : {raiz}")
-    print(f"  Saída   : {saida}")
+    print(f"  Entrada    : {raiz}")
+    print(f"  Saída      : {saida}")
+    print(f"  Biblioteca : {biblioteca}")
     modo = "APLICAR (arquivos serão movidos)" if args.aplicar else "SIMULAÇÃO (nada será movido)"
-    print(f"  Modo    : {modo}")
+    print(f"  Modo       : {modo}")
     rigor = "suave" if args.suave else "RIGOROSO (padrão)"
-    print(f"  Rigor   : {rigor}  (nitidez>={args.limite_nitidez:.0f}, "
+    print(f"  Rigor      : {rigor}  (nitidez>={args.limite_nitidez:.0f}, "
           f">={args.min_megapixels:.1f} MP, duplicata<={args.limite_duplicata})")
     print("-" * 64)
 
-    coletados = list(coletar_arquivos(raiz, saida))
+    coletados = list(coletar_arquivos(raiz, saida, biblioteca))
     caminhos_foto = [c for c, ev in coletados if not ev]
     caminhos_video = [c for c, ev in coletados if ev]
     print(f"  Encontradas {len(caminhos_foto)} fotos e "
@@ -420,7 +437,7 @@ def organizar(args):
             data = datetime.fromtimestamp(os.path.getmtime(caminho))
         except OSError:
             data = datetime.now()
-        pasta_data = pasta_por_data(saida, data, args.plano, args.por_ano)
+        pasta_data = pasta_por_data(biblioteca, data, args.plano, args.por_ano)
         executor.mover(caminho, pasta_data, "video")
         contadores["video"] += 1
 
@@ -472,7 +489,7 @@ def organizar(args):
             contadores["duplicada"] += 1
             continue
 
-        pasta_data = pasta_por_data(saida, foto.data, args.plano, args.por_ano)
+        pasta_data = pasta_por_data(biblioteca, foto.data, args.plano, args.por_ano)
         executor.mover(foto.caminho, pasta_data, "organizada")
         contadores["organizada"] += 1
 
@@ -503,13 +520,13 @@ def agrupar_duplicatas(fotos, limite):
     return grupos
 
 
-def pasta_por_data(saida, data, plano, por_ano=False):
+def pasta_por_data(base, data, plano, por_ano=False):
     if plano:
-        return os.path.join(saida, "Fotos")
+        return base
     if por_ano:
         # Uma única pasta por ano — o mínimo de pastas possível mantendo ordem.
-        return os.path.join(saida, f"{data.year:04d}")
-    return os.path.join(saida, f"{data.year:04d}", f"{data.year:04d}-{data.month:02d}")
+        return os.path.join(base, f"{data.year:04d}")
+    return os.path.join(base, f"{data.year:04d}", f"{data.year:04d}-{data.month:02d}")
 
 
 def _relatorio(executor, contadores, pastas_vazias, args):
@@ -579,6 +596,10 @@ def construir_parser():
     p.add_argument("--rigoroso", action="store_true",
                    help="Modo rigoroso (já é o padrão). Mantido por "
                         "compatibilidade; sem efeito extra.")
+    p.add_argument("--pasta-raiz", dest="pasta_raiz", default="Biblioteca",
+                   help="Nome da pasta-raiz única que abriga toda a árvore por "
+                        "data (padrão: 'Biblioteca'). Use \"\" para pôr as pastas "
+                        "de data direto no destino.")
     p.add_argument("--por-ano", dest="por_ano", action="store_true",
                    help="Agrupa só por ANO (Ano/) em vez de Ano/Ano-Mês. "
                         "Reduz ainda mais o número de pastas.")

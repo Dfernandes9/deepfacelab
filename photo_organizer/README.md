@@ -3,10 +3,10 @@
 Ferramenta simples e **segura** para colocar ordem numa biblioteca de fotos
 bagunçada. Ela resolve tudo de uma vez:
 
-1. **Junta fotos E vídeos por data** (`Ano/Ano-Mês`), acabando com as inúmeras
-   pastas espalhadas que sempre voltam. Como todos os arquivos saem das pastas
-   antigas, elas ficam vazias e são removidas — o número de pastas cai
-   drasticamente.
+1. **Junta fotos E vídeos numa só árvore** (`Biblioteca/Ano/Ano-Mês`), acabando
+   com as inúmeras pastas espalhadas que sempre voltam. Como todos os arquivos
+   saem das pastas antigas, elas ficam vazias e são removidas — o número de
+   pastas cai drasticamente.
 2. **Remove fotos duplicadas** — de cada grupo de cópias, mantém a de melhor
    qualidade.
 3. **Separa fotos de má qualidade** — tremidas, borradas ou pequenas demais.
@@ -68,23 +68,27 @@ Fotos/
 └── prints/Screenshot.png
 ```
 
-Depois (poucas pastas, fotos e vídeos juntos por data):
+Depois — **uma só árvore** (`Biblioteca/`), fotos e vídeos juntos por data:
 
 ```
 Fotos/
-├── 2023/
-│   ├── 2023-01/            ← fotos e vídeos do mês, juntos
-│   └── 2023-05/
-├── 2024/
-│   └── 2024-12/
-└── _rejeitadas/
+├── Biblioteca/                 ← tudo organizado numa única árvore
+│   ├── 2023/
+│   │   ├── 2023-01/            ← fotos e vídeos do mês, juntos
+│   │   └── 2023-05/
+│   └── 2024/
+│       └── 2024-12/
+└── _rejeitadas/                ← só o que você vai revisar/apagar
     ├── baixa_qualidade/
     ├── de_video/
     └── duplicadas/
 ```
 
-Quer o mínimo absoluto de pastas? Use `--por-ano` — aí fica só uma pasta por
-ano (`2023/`, `2024/`, …).
+- A pasta-raiz chama-se `Biblioteca/` por padrão. Troque o nome com
+  `--pasta-raiz "Meu Álbum"`, ou use `--pasta-raiz ""` para pôr as pastas de
+  data direto no destino (sem a raiz).
+- Quer o mínimo absoluto de pastas? Use `--por-ano` — aí fica só uma pasta por
+  ano (`Biblioteca/2023/`, `Biblioteca/2024/`, …).
 
 **Pode rodar quantas vezes quiser**: fotos já organizadas ficam onde estão e a
 quarentena não é reprocessada. Rodar de novo não bagunça nada — por isso as
@@ -96,6 +100,7 @@ pastas param de "voltar".
 |--------------------------|------------------------------------------------------------------|--------|
 | `--aplicar`              | Efetiva de verdade. Sem isto, só simula.                         | (off)  |
 | `--saida PASTA`          | Manda o resultado para outra pasta em vez da própria entrada.    | entrada|
+| `--pasta-raiz NOME`      | Nome da pasta-raiz única da árvore. `""` = sem raiz.             | Biblioteca |
 | `--suave`                | Afrouxa os limiares (ver tabela abaixo).                         | (off)  |
 | `--limite-nitidez N`     | Abaixo disso a foto é considerada borrada. Maior = mais rígido.  | 300    |
 | `--min-megapixels N`     | Fotos menores que isso viram "baixa qualidade".                  | 4.0    |
