@@ -88,17 +88,36 @@ pastas param de "voltar".
 |--------------------------|------------------------------------------------------------------|--------|
 | `--aplicar`              | Efetiva de verdade. Sem isto, só simula.                         | (off)  |
 | `--saida PASTA`          | Manda o resultado para outra pasta em vez da própria entrada.    | entrada|
-| `--limite-nitidez N`     | Abaixo disso a foto é considerada borrada. Maior = mais rígido.  | 80     |
-| `--min-megapixels N`     | Fotos menores que isso viram "baixa qualidade".                  | 0.5    |
-| `--limite-duplicata N`   | Quão parecidas duas fotos precisam ser p/ virar duplicata (0-10).| 5      |
+| `--rigoroso`             | Modo mais rígido de uma vez (ver tabela abaixo).                 | (off)  |
+| `--limite-nitidez N`     | Abaixo disso a foto é considerada borrada. Maior = mais rígido.  | 150    |
+| `--min-megapixels N`     | Fotos menores que isso viram "baixa qualidade".                  | 2.0    |
+| `--limite-duplicata N`   | Quão parecidas duas fotos precisam ser p/ virar duplicata (0-10).| 8      |
 | `--plano`                | Junta tudo numa pasta única em vez de subpastas por data.        | (off)  |
 | `--nao-limpar-vazias`    | Não remove as pastas que ficaram vazias.                         | (off)  |
 
-Exemplo mais rígido com borradas (separa mais fotos):
+### Níveis de rigor
+
+O padrão já é **rígido**. Para ser ainda mais exigente, use `--rigoroso`:
+
+| Nível                | Nitidez mín. | Resolução mín. | Duplicatas |
+|----------------------|:------------:|:--------------:|:----------:|
+| Padrão (normal)      | 150          | 2.0 MP         | 8          |
+| `--rigoroso`         | 300          | 4.0 MP         | 10         |
+
+Qualquer valor que você informe explicitamente tem prioridade sobre o preset.
+Exemplos:
 
 ```bash
-python organizar_fotos.py "/fotos" --limite-nitidez 150 --aplicar
+# Bem exigente, de uma vez:
+python organizar_fotos.py "/fotos" --rigoroso --aplicar
+
+# Rigoroso, mas afrouxando só a resolução mínima:
+python organizar_fotos.py "/fotos" --rigoroso --min-megapixels 2 --aplicar
 ```
+
+> **Dica:** rode primeiro em simulação (sem `--aplicar`) e olhe o resumo. Se
+> separar fotos boas demais, baixe o `--limite-nitidez`; se separar de menos,
+> aumente. O cabeçalho mostra sempre os limiares em uso.
 
 ## Como ela decide
 

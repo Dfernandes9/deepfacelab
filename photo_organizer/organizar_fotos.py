@@ -375,6 +375,9 @@ def organizar(args):
     print(f"  Saída   : {saida}")
     modo = "APLICAR (arquivos serão movidos)" if args.aplicar else "SIMULAÇÃO (nada será movido)"
     print(f"  Modo    : {modo}")
+    rigor = "RIGOROSO" if args.rigoroso else "normal"
+    print(f"  Rigor   : {rigor}  (nitidez>={args.limite_nitidez:.0f}, "
+          f">={args.min_megapixels:.1f} MP, duplicata<={args.limite_duplicata})")
     print("-" * 64)
 
     caminhos = list(coletar_imagens(raiz, saida))
@@ -522,12 +525,20 @@ def construir_parser():
                    help="Pasta de destino (padrão: organiza dentro da própria entrada).")
     p.add_argument("--aplicar", action="store_true",
                    help="Efetiva os movimentos. Sem isto, apenas simula.")
-    p.add_argument("--limite-nitidez", type=float, default=80.0,
-                   help="Abaixo deste valor a foto é considerada borrada (padrão: 80).")
-    p.add_argument("--min-megapixels", type=float, default=0.5,
-                   help="Fotos menores que isto são baixa qualidade (padrão: 0.5 MP).")
-    p.add_argument("--limite-duplicata", type=int, default=5,
-                   help="Distância máx. de hash para considerar duplicata (padrão: 5).")
+    # Padrões deixados como None para sabermos se o usuário os informou
+    # explicitamente (o que tem prioridade sobre o preset --rigoroso).
+    p.add_argument("--limite-nitidez", type=float, default=None,
+                   help="Abaixo deste valor a foto é considerada borrada "
+                        "(padrão: 150; com --rigoroso: 300).")
+    p.add_argument("--min-megapixels", type=float, default=None,
+                   help="Fotos menores que isto são baixa qualidade "
+                        "(padrão: 2.0 MP; com --rigoroso: 4.0 MP).")
+    p.add_argument("--limite-duplicata", type=int, default=None,
+                   help="Distância máx. de hash para considerar duplicata "
+                        "(padrão: 8; com --rigoroso: 10).")
+    p.add_argument("--rigoroso", action="store_true",
+                   help="Modo mais rígido: separa mais fotos borradas, exige "
+                        "resolução maior e agrupa mais duplicadas.")
     p.add_argument("--plano", action="store_true",
                    help="Junta tudo numa pasta única em vez de subpastas por data.")
     p.add_argument("--nao-limpar-vazias", dest="limpar_vazias",
@@ -538,8 +549,25 @@ def construir_parser():
     return p
 
 
+# Presets de rigor: (limite_nitidez, min_megapixels, limite_duplicata)
+PRESET_NORMAL = (150.0, 2.0, 8)
+PRESET_RIGOROSO = (300.0, 4.0, 10)
+
+
+def aplicar_presets(args):
+    """Resolve os limiares: flag explícita > preset --rigoroso > padrão normal."""
+    base = PRESET_RIGOROSO if args.rigoroso else PRESET_NORMAL
+    if args.limite_nitidez is None:
+        args.limite_nitidez = base[0]
+    if args.min_megapixels is None:
+        args.min_megapixels = base[1]
+    if args.limite_duplicata is None:
+        args.limite_duplicata = base[2]
+    return args
+
+
 def main(argv=None):
-    args = construir_parser().parse_args(argv)
+    args = aplicar_presets(construir_parser().parse_args(argv))
     return organizar(args)
 
 
