@@ -52,6 +52,22 @@ Se preferir manter as originais intactas e mandar o resultado para outra pasta:
 python organizar_fotos.py "/entrada" --saida "/fotos_organizadas" --aplicar
 ```
 
+### 3. Quer TUDO numa pasta única? (para importar no app Fotos)
+
+Se a ideia é só juntar tudo numa **única pasta plana** — sem milhares de
+subpastas — e deixar o **app Fotos (Apple)** ou o **Google Fotos** organizarem
+por data depois (eles fazem isso sozinhos, pela data de cada arquivo), use
+`--uma-pasta`:
+
+```bash
+python organizar_fotos.py "/caminho/das/suas/fotos" --uma-pasta --aplicar
+```
+
+Resultado: uma pasta `Biblioteca/` com **todas as fotos e vídeos bons juntos**,
+sem subpastas. As duplicadas e as ruins continuam indo para `_rejeitadas/`, para
+a `Biblioteca/` chegar limpa no app. Depois é só arrastar a `Biblioteca/` para
+dentro do Fotos.
+
 ## Resultado
 
 Antes (bagunça típica — dezenas de pastas):
@@ -106,7 +122,7 @@ pastas param de "voltar".
 | `--min-megapixels N`     | Fotos menores que isso viram "baixa qualidade".                  | 4.0    |
 | `--limite-duplicata N`   | Quão parecidas duas fotos precisam ser p/ virar duplicata (0-10).| 10     |
 | `--por-ano`              | Agrupa só por ANO (`2023/`) — o mínimo de pastas.                | (off)  |
-| `--plano`                | Junta tudo numa pasta única em vez de subpastas por data.        | (off)  |
+| `--uma-pasta`            | Junta tudo numa pasta única, sem subpastas (bom p/ app Fotos).   | (off)  |
 | `--nao-limpar-vazias`    | Não remove as pastas que ficaram vazias.                         | (off)  |
 
 > **Sobre os vídeos:** são movidos junto das fotos, para a pasta da data de

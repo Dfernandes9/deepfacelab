@@ -603,8 +603,10 @@ def construir_parser():
     p.add_argument("--por-ano", dest="por_ano", action="store_true",
                    help="Agrupa só por ANO (Ano/) em vez de Ano/Ano-Mês. "
                         "Reduz ainda mais o número de pastas.")
-    p.add_argument("--plano", action="store_true",
-                   help="Junta tudo numa pasta única em vez de subpastas por data.")
+    p.add_argument("--uma-pasta", "--plano", dest="plano", action="store_true",
+                   help="Junta TUDO (fotos + vídeos) numa pasta única, sem "
+                        "subpastas por data. Ideal para depois importar no app "
+                        "Fotos (Apple) / Google Fotos, que organizam sozinhos.")
     p.add_argument("--nao-limpar-vazias", dest="limpar_vazias",
                    action="store_false", help="Não remove pastas que ficaram vazias.")
     p.add_argument("--exemplos", type=int, default=15,
