@@ -77,7 +77,7 @@ class PackedFaceset():
             except:
                 raise Exception(f"error while processing sample {sample_path}")
 
-        offsets.append ( of.tell() )
+        offsets.append ( of.tell() - data_start_offset )
 
         of.seek(sample_data_table_offset, 0)
         for offset in offsets:
