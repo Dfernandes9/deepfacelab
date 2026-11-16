@@ -52,3 +52,36 @@ Este é um **contrato de design**, não um arquivo aceito hoje pelo `main.py`. N
 - O manifesto ainda não possui parser/runner.
 - Não há benchmark comprovando desempenho ou sucesso em qualquer vídeo.
 - Não há garantia de perfect head swap nem clone de voz integrado.
+
+## Implementação inicial (16/11/2026)
+O validador independente está em [project_loader.py](project_loader.py). Executa apenas leitura, verifica existência e extensões de arquivos, hashes SHA-256, IDs, permissões declaradas e modo de saída. Não realiza extração, troca de cabeça, criação de voz, renderização ou auditoria jurídica da autorização. O campo `authorization_record` é uma referência declaratória, ainda não verificável criptograficamente.
+
+### Comandos
+A partir da raiz do repositório e com Python 3.9+:
+```sh
+python3 -m unittest aero_lab.test_project_loader -v
+python3 -m aero_lab.project_loader ./job.json --workspace ./meu_acervo
+```
+
+### Campos atualmente obrigatórios do manifesto
+`schema_version=0.1`, `job_id`, `identities` (cada uma com `id`, `head_swap_authorized=true`, `authorization_record`), `assets` (cada um com `id`, `kind`, `path`, `sha256`), `source_identity_id`, `target_asset_id`, `target_use_authorized=true`, `target_authorization_record`, `mode=head`, `pipeline_profile=quality|balanced`, `voice.enabled=false`, `output.preserve_original=true`, `output.synthetic_content_label=true`.
+
+Exemplo mínimo (ajustar o hash aos bytes reais do vídeo):
+```json
+{
+  "schema_version": "0.1",
+  "job_id": "ensaio-001",
+  "identities": [{"id": "identity-001", "head_swap_authorized": true, "authorization_record": "consent-001"}],
+  "assets": [{"id": "video-001", "kind": "video", "path": "video.mp4", "sha256": "COLOQUE_AQUI_O_SHA256_REAL"}],
+  "source_identity_id": "identity-001",
+  "target_asset_id": "video-001",
+  "target_use_authorized": true,
+  "target_authorization_record": "license-001",
+  "mode": "head",
+  "pipeline_profile": "quality",
+  "voice": {"enabled": false},
+  "output": {"preserve_original": true, "synthetic_content_label": true}
+}
+```
+
+O resultado esperado de uma validação bem-sucedida é `VALIDATED_NOT_RENDERED`. Nenhum vídeo real foi processado ou modelo treinado nesta etapa. A suíte de testes utiliza arquivos sintéticos de bytes e não verifica decodificação de vídeo.
