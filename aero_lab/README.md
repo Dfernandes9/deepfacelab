@@ -30,3 +30,17 @@ Na raiz do repositório:
 python3 aero_lab/verify_foundation.py
 ```
 O verificador depende apenas da biblioteca padrão de Python. Ele devolve status PASS/FAIL dos contratos estáticos existentes, sem escrever em qualquer arquivo. O resultado não substitui testes de runtime, GPU, resultados visuais ou segurança.
+
+## Escopo universal: identidade desacoplada do vídeo
+Este é um laboratório multi-identidade e multi-projeto. Os cinco vídeos iniciais são apenas amostras de referência, não definem uma pessoa fixa nem um único gênero, formato, iluminação ou cenário. A identidade de origem e o vídeo-alvo são entradas independentes, selecionadas por projeto, com permissões verificáveis.
+
+- **Identity Registry**: uma ou mais coleções de referência autorizadas, com IDs opacos, versões, direitos de uso e origem comprovada. Nenhum nome pessoal é codificado no motor.
+- **Media Registry**: qualquer arquivo suportado mediante validação de contêiner, codec, resolução, FPS, orientação, áudio e direitos de uso. A entrada não precisa ter a mesma duração ou câmera das referências.
+- **Job Manifest**: associação explícita entre `source_identity_id`, `target_asset_id`, `profile` e opções de saída. Uma identidade pode ser usada em múltiplos vídeos autorizados, e um vídeo pode receber diferentes execuções em projetos separados.
+- **Head pipeline**: detecção, tracking, landmarks, XSeg, adaptação geométrica, composição com atenção a cabelo, pescoço, iluminação, oclusão e consistência temporal.
+- **Quality Gate**: diagnósticos por frame, detecção de falha e revisão de amostras; falhar com informação explícita em vez de declarar universalidade ou perfeição.
+- **Voice stage (futura)**: referência de voz e roteiro configuráveis por job, sem acoplamento a uma identidade fixa; sempre com autorização específica.
+
+A compatibilidade é **orientada a variedade de vídeos**, não uma promessa de resultado impecável para todo vídeo. Perfis, planos difíceis, baixa resolução, oclusões e movimentos bruscos podem exigir revisão manual.
+
+Contrato de configuração e exemplo sem dados pessoais: [UNIVERSAL_PROJECT_SPEC.md](UNIVERSAL_PROJECT_SPEC.md).
